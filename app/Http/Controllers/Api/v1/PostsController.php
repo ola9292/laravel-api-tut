@@ -26,7 +26,7 @@ class PostsController extends Controller
             'body' => ['required', 'string', 'min:2'],
         ]);
 
-        $data['user_id'] = 1;
+        $data['user_id'] = auth()->user()->id;
 
         $post = Post::create($data);
 
@@ -38,9 +38,13 @@ class PostsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Post $post)
     {
-        $post = Post::findOrFail($id);
+        $user_id = auth()->user()->id;
+
+        if ($post->user_id != $user_id) {
+            abort(403, 'Access Denied');
+        }
 
         return response()->json([
             'data' => $post->load('user'),
@@ -51,14 +55,16 @@ class PostsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Post $post)
     {
         $data = $request->validate([
             'title' => ['required'],
             'body' => ['required'],
         ]);
-
-        $post = Post::findOrFail($id);
+        if ($post->user_id != $user_id) {
+            abort(403, 'Access Denied');
+        }
+        // $post = Post::findOrFail($id);
 
         $post->update($data);
 
@@ -70,9 +76,12 @@ class PostsController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Post $post)
     {
-        $post = Post::findOrFail($id);
+        if ($post->user_id != $user_id) {
+            abort(403, 'Access Denied');
+        }
+
         $post->delete();
 
         return response()->noContent();
